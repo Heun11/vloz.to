@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{%block title%}Download{%endblock%}
+{%block content%}
+<h1>Download the File</h1>
+<p>
+{%if files == []%}
+  No Files
+{%endif%}
+{% for i in files %}
+  {{i}} <button type="button"><a href="/return-files/{{i}}">download</a></button> <button type="button"><a href="/delete-files/{{i}}">delete</a></button> <br>
+{% endfor %}
+</p>
+{%endblock%}
