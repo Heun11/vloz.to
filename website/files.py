@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, send_file
-from . import db, ALLOWED_ENDINGS, UPLOAD_FOLDER
+from . import db, ALLOWED_ENDINGS, UPLOAD_FOLDER, MAX_SIZE
 import os, glob
 from werkzeug.utils import secure_filename
 from flask_login import login_user, login_required, logout_user, current_user
@@ -11,6 +11,17 @@ def check_allowed_ending(file):
         filename = file.lower()
         end = str(filename).split(".")
         if end[1] in ALLOWED_ENDINGS:
+            return True
+        else:
+            return False
+    except:
+        print("err")
+        return False
+
+def check_allowed_size(file):
+    try:
+        size = len(file.read())
+        if size < MAX_SIZE:
             return True
         else:
             return False
@@ -35,12 +46,12 @@ def upload_file():
             print('no filename')
             return redirect(request.url)
         else:
-            if check_allowed_ending(file.filename):
+            if check_allowed_ending(file.filename) and check_allowed_size(file):
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(files.root_path, UPLOAD_FOLDER, filename))
                 print("saved file successfully")
             else:
-                print("no allowed type")
+                print("no allowed type or too big")
                 return redirect(request.url)
 
             return redirect('/download')
@@ -66,5 +77,4 @@ def return_files_tut(filename):
 @files.route('/delete-files/<filename>')
 def delete_files_tut(filename):
     os.remove(os.path.join(files.root_path, UPLOAD_FOLDER, filename))
-    # os.remove(f"uploads/{filename}")
     return redirect("/download")
