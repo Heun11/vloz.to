@@ -3,6 +3,7 @@ from .db_models import users
 from . import db
 from .fun import hash_pass
 from flask_login import login_user, login_required, logout_user, current_user
+import json
 
 accounts = Blueprint('accounts', __name__)
 
@@ -25,7 +26,7 @@ def register():
                 return redirect(url_for("accounts.user"))
 
             else:
-                new_user = users(email=email, name=user, password=hash_pass(password), files="")
+                new_user = users(email=email, name=user, password=hash_pass(password), files=json.dumps({"files":[]}))
 
                 db.session.add(new_user)
                 db.session.commit()
@@ -69,7 +70,7 @@ def logout():
 @accounts.route("/user")
 def user():
     if current_user.is_authenticated:
-        return render_template("user.html", user=current_user.name)
+        return render_template("user.html", user=current_user.name, files=json.loads(current_user.files))
     else:
         return redirect(url_for("accounts.login"))
 

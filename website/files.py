@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, send_file
 from . import db, ALLOWED_ENDINGS, UPLOAD_FOLDER, MAX_SIZE
 import os, glob
+from .db_models import users
 from werkzeug.utils import secure_filename
 from flask_login import login_user, login_required, logout_user, current_user
+import json
 
 files = Blueprint("files", __name__)
 
@@ -15,7 +17,7 @@ def check_allowed_ending(file):
         else:
             return False
     except:
-        print("err")
+        print("no allowed ending")
         return False
 
 def check_allowed_size(file):
@@ -26,8 +28,22 @@ def check_allowed_size(file):
         else:
             return False
     except:
-        print("err")
+        print("no allowed size")
         return False
+
+def check_same_name(file):
+    try:
+        if current_user.is_authenticated:   
+            f_user = users.query.filter_by(email=current_user.email).first()
+            data = json.loads(f_user.files)["files"]
+            for i in data:
+                if i == "/"+file.filename:
+                    return False
+            return True
+    except:
+        print("same name error")
+        return False
+    
 
 @files.route("/")
 def home():
@@ -36,24 +52,27 @@ def home():
 @files.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-
         if 'file' not in request.files:
             print('no file')
             return redirect(request.url)
         file = request.files['file']
-
         if file.filename == '':
             print('no filename')
             return redirect(request.url)
         else:
-            if check_allowed_ending(file.filename) and check_allowed_size(file):
+            if check_allowed_ending(file.filename) and check_allowed_size(file) and current_user.is_authenticated and check_same_name(file):
+                f_user = users.query.filter_by(email=current_user.email).first()
+                data = json.loads(f_user.files)
+                data["files"].append("/"+file.filename)
+                f_user.files = json.dumps(data)
+                db.session.commit()
+
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(files.root_path, UPLOAD_FOLDER, filename))
                 print("saved file successfully")
             else:
                 print("no allowed type or too big")
                 return redirect(request.url)
-
             return redirect('/download')
     return render_template('upload.html')
 
@@ -76,5 +95,11 @@ def return_files_tut(filename):
 
 @files.route('/delete-files/<filename>')
 def delete_files_tut(filename):
-    os.remove(os.path.join(files.root_path, UPLOAD_FOLDER, filename))
+    if current_user.is_authenticated:
+        f_user = users.query.filter_by(email=current_user.email).first()
+        data = json.loads(f_user.files)
+        data["files"].remove("/"+filename)
+        f_user.files = json.dumps(data)
+        db.session.commit()
+        os.remove(os.path.join(files.root_path, UPLOAD_FOLDER, filename))
     return redirect("/download")

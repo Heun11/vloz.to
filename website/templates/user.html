@@ -2,6 +2,9 @@
 {%block title%}Upload{%endblock%}
 {%block content%}
 <h1>Welcome {{user}}</h1>
-<p>bla bla</p>
-<button><a href="/account/logout">Logout</a></button>
+<h2>Your files:</h2>
+<p>{%for i in files["files"]%}
+        {{i}}<button type="button"><a href="/delete-files{{i}}">delete</a></button> <br>
+    {%endfor%}</p>
+<!-- <button><a href="/account/logout">Logout</a></button> -->
 {%endblock%}
