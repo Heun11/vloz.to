@@ -3,8 +3,9 @@ from . import db, ALLOWED_ENDINGS, UPLOAD_FOLDER, MAX_SIZE
 import os, glob
 from .db_models import users
 from werkzeug.utils import secure_filename
-from flask_login import login_user, login_required, logout_user, current_user
+from flask_login import current_user
 import json
+import shutil
 
 files = Blueprint("files", __name__)
 
@@ -31,15 +32,22 @@ def check_allowed_size(file):
         print("no allowed size")
         return False
 
+def check_free_space(file):
+    total, used, free = shutil.disk_usage(os.path.join(files.root_path, UPLOAD_FOLDER))
+    size = len(file.read())
+    if size > free:
+        return False
+    return True
+
 def check_same_name(file):
-    try:
-        if current_user.is_authenticated:   
-            f_user = users.query.filter_by(email=current_user.email).first()
-            data = json.loads(f_user.files)["files"]
-            for i in data:
-                if i == "/"+file.filename:
-                    return False
-            return True
+    try:  
+        l = []
+        for filepath in glob.iglob(os.path.join(files.root_path, UPLOAD_FOLDER, "*")):
+            path = filepath.split("uploads/")
+            l.append("/"+path[1])
+        if "/"+file.filename in l:
+            return False
+        return True
     except:
         print("same name error")
         return False
@@ -60,7 +68,7 @@ def upload_file():
             print('no filename')
             return redirect(request.url)
         else:
-            if check_allowed_ending(file.filename) and check_allowed_size(file) and current_user.is_authenticated and check_same_name(file):
+            if check_allowed_ending(file.filename) and check_allowed_size(file) and current_user.is_authenticated and check_same_name(file) and check_free_space(file):
                 f_user = users.query.filter_by(email=current_user.email).first()
                 data = json.loads(f_user.files)
                 data["files"].append("/"+file.filename)
