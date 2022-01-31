@@ -51,7 +51,6 @@ def login():
             found_user = users.query.filter_by(email=email).first()
             if found_user:
                 if hash_pass(password) == found_user.password:
-                    user = found_user.name
                     login_user(found_user, remember=True)
                     return redirect(url_for("accounts.user"))
                 else:

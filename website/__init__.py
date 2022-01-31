@@ -13,7 +13,7 @@ ALLOWED_ENDINGS =   ["txt", "md", "json", "jar",
                     "apk", "pdf", "doc", "docx", "ppt", "pptx",
                     "zip", "rar", "tar", "iso",
                     "py", "cpp", "c", "cs", "java"]
-MAX_SIZE = 105678400
+MAX_SIZE = 100000000
 
 def crate_app():
     app = Flask(__name__, template_folder='templates')

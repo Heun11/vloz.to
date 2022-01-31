@@ -24,6 +24,7 @@ def check_allowed_ending(file):
 def check_allowed_size(file):
     try:
         size = len(file.read())
+        print(size)
         if size < MAX_SIZE:
             return True
         else:
